@@ -1,0 +1,80 @@
+# General
+.DS_Store
+*.log
+*.swp
+*~
+.env
+.env.*
+!.env.example
+
+# IDE/Editor specific
+.idea/
+.vscode/
+*.sublime-*
+.project
+.settings/
+
+# Credentials and secrets
+*.pem
+*.key
+*.crt
+*.csr
+*.p12
+*.pfx
+*secret*.yaml
+*secret*.yml
+*-secrets.yaml
+*-secrets.yml
+*.htpasswd
+.credentials/
+
+# Observability specific
+# Grafana
+grafana.db
+grafana.ini
+custom.ini
+.grafana/
+*dashboard.json.tmp
+
+# Prometheus
+prometheus.yml.tmp
+*rules.yml.tmp
+/data/
+/prometheus/data/
+
+# OpenTelemetry
+otel-collector-config.yaml.tmp
+*collector-secrets.yaml
+
+# Loki
+loki-config.yaml.tmp
+/loki/data/
+
+# Tempo
+tempo-config.yaml.tmp
+/tempo/data/
+
+# Local development
+*.local.yaml
+*.local.yml
+local/
+dev/
+/configs/local/
+
+# Logs and temp files
+logs/
+tmp/
+temp/
+*.tmp
+*.bak
+debug/
+
+# Package managers
+node_modules/
+package-lock.json
+yarn.lock
+dist/
+
+# OS generated
+Thumbs.db
+.directory
