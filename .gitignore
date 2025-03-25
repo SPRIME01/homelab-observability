@@ -1,0 +1,70 @@
+# Local configuration files
+*.env
+*.local
+.env*
+config.local.yaml
+config.local.yml
+
+# Credentials and secrets
+**/credentials/
+*.pem
+*.key
+*.crt
+*.password
+secrets/
+
+# Temporary files
+*.tmp
+*.temp
+*.log
+*.pid
+.DS_Store
+Thumbs.db
+
+# OpenTelemetry temp files
+otel-collector-config.*.yaml
+collector.*.yaml
+
+# Grafana local files
+grafana.db
+grafana.ini
+custom.ini
+sessions/
+
+# IDE and editor files
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Dependencies and build artifacts
+node_modules/
+vendor/
+dist/
+build/
+*.exe
+*.dll
+*.so
+*.dylib
+
+# Terraform local files
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+
+# Debug and backup files
+debug/
+*.bak
+*.backup
+*.debug
+
+# Operating system files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
