@@ -1,6 +1,35 @@
 # GitHub Copilot Custom Instructions
 
-These instructions guide GitHub Copilot to generate code that adheres to best practices and architectural principles. In cases of conflict, these custom instructions take precedence over other guidelines.
+### Project Overview
+
+This repository focuses on the **monitoring and observability** aspects of the homelab. Its primary goal is to provide unified collection and analysis of metrics, logs, and traces across all homelab components for effective monitoring, troubleshooting, and performance optimization.
+
+**Tech Stack:**
+
+*   **OpenTelemetry**: For unified collection of metrics, logs, and traces. Use YAML for collector configurations.
+*   **Prometheus**: For metrics monitoring and alerting. Use YAML for Prometheus rules.
+*   **Grafana**: For data visualization and dashboarding. Use JSON for dashboard definitions.
+*   **Loki**: For log storage and aggregation. Use YAML for Loki configuration.
+*   **Tempo**: For distributed tracing. Use YAML for Tempo configuration.
+*   **Python** and **Node.js**: For application instrumentation libraries.
+
+
+**Important Coding Patterns and Rules:**
+
+*   **OpenTelemetry Standards**: Adhere to OpenTelemetry standards for data formats and context propagation.
+*   **Prometheus Query Language (PromQL)**: Write efficient and accurate PromQL queries for alerting and dashboarding.
+*   **Grafana Dashboard Design**: Create clear, informative, and well-organized Grafana dashboards.
+*   **Log Aggregation and Analysis**: Configure Loki for effective log aggregation and utilize its query language (LogQL) for analysis.
+*   **Distributed Tracing Implementation**: Implement trace context propagation across services to enable end-to-end visibility.
+*   **Instrumentation Best Practices**: Follow best practices for instrumenting applications to collect relevant telemetry data.
+*   **Alerting Rules**: Define clear and actionable alerting rules in Prometheus AlertManager.
+
+**Key Limitations:**
+
+*   Integration with an existing **InfluxDB instance on the Home Automation Node** for time-series data. Ensure proper configuration for data export.
+*   Consider the performance impact of instrumentation on the monitored applications.
+*   Ensure proper configuration of network access between observability components.
+
 
 ---
 
@@ -73,15 +102,16 @@ These instructions guide GitHub Copilot to generate code that adheres to best pr
 
 ---
 
-## Branch Management
-
-- Never work directly on main/master
-- Create feature branches: `git checkout -b feature/<feature-name>` using kebab-case
-- Keep features small and focused
-- Use pull requests for code reviews
-- Commit often with descriptive messages
-- Commit Message Format: - 📝 Be extremely detailed with file changes - 🤔 Explain the reasoning behind each change - 🎨 Use relevant emojis to categorize changes - Example: "✨ feat(auth): Add JWT token validation to login endpoint - 🔧 Modified: src/auth/jwt_validator.py - 📦 Added: tests/auth/test_jwt_validator.py - 🔥 Removed: old token validation logic
-  Why: Improves security by implementing industry-standard JWT validation"
+## Commit Message Format
+- 📝 Be extremely detailed with file changes
+- 🤔 Explain the reasoning behind each change
+- 🎨 Use relevant emojis to categorize changes
+- Examples:
+  - ✨ feat(auth): Add JWT token validation to login endpoint
+  - 🔧 Modified: src/auth/jwt_validator.py
+  - 📦 Added: tests/auth/test_jwt_validator.py
+  - 🔥 Removed: old token validation logic
+  - 🤔 Why: Improves security by implementing industry-standard JWT validation"
 
 ---
 
