@@ -1,68 +1,56 @@
-# 🏠 Homelab Observability Stack
+# Homelab Observability
 
-> 📊 Comprehensive monitoring and observability configuration for my homelab infrastructure
+This repository contains the monitoring and observability stack for the homelab project. It was created as part of a migration from the original `homelab-infra` repository to better organize the codebase.
 
-## 🎯 Overview
+## Repository Structure
 
-This repository contains the complete observability stack configuration for my homelab, providing end-to-end monitoring, logging, and alerting capabilities.
+- **alerting/**: Alert manager configurations and notification templates
+- **collectors/**: Monitoring data collectors and exporters
+- **configs/**: Configuration files for observability components
+- **dashboards/**: Grafana dashboards
+- **grafana/**: Grafana configuration and provisioning
+- **log-management/**: Log collection and processing configurations
+- **opentelemetry/**: OpenTelemetry configurations and collectors
+- **scripts/**: Utility scripts for deployment and maintenance
 
-## 🧰 Components
+## Migration Status
 
-- 📡 **OpenTelemetry Collector** - Data collection and processing
-- 📈 **Grafana** - Visualization and dashboarding
-- 🚨 **Alerting** - Prometheus alerting rules and notifications
-- 📝 **Logging** - Loki-based log aggregation
-- ⏱️ **Tempo** - Distributed tracing
+The migration from `homelab-infra` has been completed. All monitoring components have been successfully moved and tested in their new locations.
 
-## 🏗️ Directory Structure
+## Integration with Other Repositories
+
+This repository works in conjunction with:
+
+- **homelab-infra**: Core infrastructure components
+- **homelab-ai**: AI/ML components for the homelab
+- **homelab-data**: Data processing and storage services
+
+## Getting Started
+
+1. Clone this repository
+2. Set up dependencies as described in the docs folder
+3. Run the deployment scripts to set up observability stack
+
+## Deployment
+
+To deploy the full observability stack:
 
 ```bash
-.
-├── collectors/         # OpenTelemetry collector configurations
-├── dashboards/        # Grafana dashboard definitions
-├── alerting/          # Alert rules and notification policies
-├── logging/           # Logging configurations
-└── configs/           # General component configurations
+./scripts/deploy-observability.sh
 ```
 
-## 🚀 Getting Started
+To deploy individual components:
 
-1. Configure the OpenTelemetry Collector
-    ```bash
-    cd collectors
-    kubectl apply -f otel-collector.yaml
-    ```
+```bash
+./scripts/deploy-prometheus.sh
+./scripts/deploy-grafana.sh
+./scripts/deploy-loki.sh
+```
 
-2. Deploy Grafana dashboards
-    ```bash
-    cd dashboards
-    kubectl apply -f .
-    ```
+## Testing
 
-## 📊 Monitoring Stack
+Automated tests are available in the `tests/` directory.
 
-- **Metrics**: Prometheus-based metrics collection
-- **Logs**: Loki for log aggregation
-- **Traces**: Tempo for distributed tracing
-- **Dashboards**: Pre-configured Grafana dashboards
+## Contributing
 
-## ⚙️ Configuration
-
-Refer to individual component directories for detailed configuration options:
-
-- `collectors/README.md` - OpenTelemetry setup
-- `dashboards/README.md` - Dashboard management
-- `alerting/README.md` - Alert configuration
-- `logging/README.md` - Log aggregation setup
-
-## 🔐 Security
-
-Sensitive information is managed through Kubernetes secrets. See `.gitignore` for excluded patterns.
-
-## 📝 License
-
-MIT License
-
-## 🤝 Contributing
-
-Contributions welcome! Please read the contributing guidelines first.
+See CONTRIBUTING.md for details on how to contribute to this project.
