@@ -1,0 +1,66 @@
+processors:
+  transform:
+    log_statements:
+      # Extract structured data from Home Assistant logs
+      - context: resource["service.name"] == "home-assistant"
+        statements:
+          - set(body, ParseJSON(body))
+          - set(attributes["event_type"], body["event_type"])
+          - set(attributes["domain"], body["domain"])
+
+      # Extract structured data from RabbitMQ logs
+      - context: resource["service.name"] == "rabbitmq"
+        statements:
+          - set(attributes["queue"], regex_find(body, "queue '([^']+)'"))
+          - set(attributes["connection"], regex_find(body, "connection <([^>]+)>"))
+
+  filter:
+    logs:
+      # Filter out sensitive information
+      exclude:
+        match_type: regexp
+        body: ".*(password|token|key|secret|credential).*"
+
+      # Classify logs by severity
+      include:
+        match_type: regexp
+        severity_text: "(?i)(error|warn|info|debug)"
+
+  attributes:
+    actions:
+      # Remove sensitive attributes
+      - key: http.request.header.authorization
+        action: delete
+      - key: http.request.header.cookie
+        action: delete
+
+      # Add standard labels
+      - key: environment
+        value: homelab
+        action: insert
+      - key: log.source
+        from_attribute: resource["service.name"]
+        action: insert
+
+  resource:
+    attributes:
+      # Enrich with node information
+      - key: k8s.node.name
+        from_env: HOSTNAME
+        action: insert
+      - key: deployment.environment
+        value: homelab
+        action: insert
+
+  grouping:
+    # Correlate related log entries
+    keys:
+      - attributes["trace_id"]
+      - attributes["k8s.pod.name"]
+      - attributes["service.name"]
+    aggregation_interval: 10s
+
+service:
+  pipelines:
+    logs:
+      processors: [transform, filter, attributes, resource, grouping]

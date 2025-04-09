@@ -1,0 +1,177 @@
+receivers:
+  prometheus:
+    config:
+      scrape_configs:
+        - job_name: 'otel-collector'
+          scrape_interval: 10s
+          static_configs:
+            - targets: ['${MY_POD_IP}:8888']
+
+processors:
+  batch:
+    timeout: 10s
+    send_batch_size: 1000
+    send_batch_max_size: 2000
+
+  # Filter metrics before sending to InfluxDB for long-term storage
+  filter:
+    metrics:
+      include:
+        match_type: regexp
+        # Include system metrics that are important for long-term trending
+        resource_attributes:
+          - key: service.namespace
+            value: system|infrastructure
+        metric_names:
+          - cpu\..*
+          - memory\..*
+          - disk\..*
+          - network\..*
+          - temperature
+          - battery
+          - power\..*
+          - uptime
+          - rabbitmq\.queue\..*
+          - k8s\.node\..*
+          - k8s\.pod\..*
+          - triton\.model\..*
+
+  # Transform metric names to be more InfluxDB friendly
+  metricstransform:
+    transforms:
+      # Rename system metrics to match InfluxDB naming conventions
+      - include: cpu\..*
+        match_type: regexp
+        action: update
+        new_name: system.cpu.${1}
+      - include: memory\..*
+        match_type: regexp
+        action: update
+        new_name: system.memory.${1}
+      # Add more transforms as needed
+
+  # Add resource attributes as tags for better organization in InfluxDB
+  resource:
+    attributes:
+      - key: metric_source
+        value: otel_collector
+        action: upsert
+
+exporters:
+  influxdb:
+    endpoint: http://homeassistant.local:8086
+    org: homeassistant
+    bucket: system_metrics
+    token: ${INFLUXDB_TOKEN}
+    metrics_schema: telegraf-prometheus-v1
+    sending_queue:
+      enabled: true
+      queue_size: 5000
+    retry_on_failure:
+      enabled: true
+      initial_interval: 5s
+      max_interval: 30s
+      max_elapsed_time: 300s
+    timeout: 30s
+
+  # Also configure an InfluxDB exporter for Home Assistant specific metrics
+  influxdb/hass:
+    endpoint: http://homeassistant.local:8086
+    org: homeassistant
+    bucket: home_assistant
+    token: ${INFLUXDB_TOKEN}
+    metrics_schema: telegraf-prometheus-v1
+    sending_queue:
+      enabled: true
+      queue_size: 5000
+    retry_on_failure:
+      enabled: true
+      initial_interval: 5s
+      max_interval: 30s
+      max_elapsed_time: 300s
+    timeout: 30s
+
+  # Exporter for AI metrics
+  influxdb/ai:
+    endpoint: http://homeassistant.local:8086
+    org: homeassistant
+    bucket: ai_inference
+    token: ${INFLUXDB_TOKEN}
+    metrics_schema: telegraf-prometheus-v1
+    sending_queue:
+      enabled: true
+      queue_size: 2000
+    retry_on_failure:
+      enabled: true
+      initial_interval: 5s
+      max_interval: 30s
+      max_elapsed_time: 300s
+    timeout: 30s
+
+service:
+  pipelines:
+    # System metrics pipeline
+    metrics/system:
+      receivers: [prometheus]
+      processors:
+        - filter
+        - metricstransform
+        - resource
+        - batch
+      exporters: [influxdb]
+
+    # Home Assistant metrics pipeline
+    metrics/hass:
+      receivers: [prometheus]
+      processors:
+        - filter/hass
+        - batch
+      exporters: [influxdb/hass]
+
+    # AI metrics pipeline
+    metrics/ai:
+      receivers: [prometheus]
+      processors:
+        - filter/ai
+        - batch
+      exporters: [influxdb/ai]
+
+  extensions: [health_check, pprof]
+
+extensions:
+  health_check:
+    endpoint: 0.0.0.0:13133
+  pprof:
+    endpoint: 0.0.0.0:1777
+
+# Define additional filters for specific pipelines
+processor_types:
+  filter/hass:
+    metrics:
+      include:
+        match_type: regexp
+        resource_attributes:
+          - key: service.namespace
+            value: home_assistant
+        metric_names:
+          - hass\..*
+          - temperature
+          - humidity
+          - illuminance
+          - motion
+          - occupancy
+          - energy
+          - power
+
+  filter/ai:
+    metrics:
+      include:
+        match_type: regexp
+        resource_attributes:
+          - key: service.namespace
+            value: ai|inference|model
+        metric_names:
+          - triton\..*
+          - model\..*
+          - inference\..*
+          - gpu\..*

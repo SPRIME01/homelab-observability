@@ -1,0 +1,72 @@
+receivers:
+  filelog:
+    include: [ /var/log/*.log, /var/log/syslog ]
+    include_file_path: true
+    operators:
+      - type: regex_parser
+        regex: '^(?P<time>\d{4}-\d{2}-\d{2}\s\d{2}:\d{2}:\d{2})\s(?P<severity>\w+)\s(?P<message>.*)$'
+        timestamp:
+          parse_from: time
+          layout: '2006-01-02 15:04:05'
+
+  filelog/hass:
+    include: [ /config/home-assistant.log ]
+    include_file_path: true
+    operators:
+      - type: regex_parser
+        regex: '^(?P<time>\d{4}-\d{2}-\d{2}\s\d{2}:\d{2}:\d{2})\s(?P<severity>\w+)\s(?P<message>.*)$'
+        timestamp:
+          parse_from: time
+          layout: '2006-01-02 15:04:05'
+
+  filelog/rabbitmq:
+    include: [ /var/log/rabbitmq/*.log ]
+    include_file_path: true
+    operators:
+      - type: regex_parser
+        regex: '=(?P<severity>\w+)\s+REPORT===\s+(?P<time>\d{2}-\w{3}-\d{4}::\d{2}:\d{2}:\d{2})\s===\s(?P<message>.*)$'
+        timestamp:
+          parse_from: time
+          layout: '02-Jan-2006::15:04:05'
+
+  kubeletstats:
+    collection_interval: 20s
+    auth_type: "serviceAccount"
+    endpoint: "${K8S_NODE_NAME}:10250"
+
+processors:
+  batch:
+    timeout: 1s
+    send_batch_size: 1024
+
+  resource:
+    attributes:
+      - key: environment
+        value: homelab
+        action: upsert
+
+  filter:
+    logs:
+      include:
+        match_type: regexp
+        severity_text: ["error|warn|info|debug"]
+
+exporters:
+  loki:
+    endpoint: http://loki:3100/loki/api/v1/push
+    tenant_id: "homelab"
+    labels:
+      source: "otel"
+      hostname: "${HOSTNAME}"
+    format: json
+
+service:
+  pipelines:
+    logs:
+      receivers: [filelog, filelog/hass, filelog/rabbitmq, kubeletstats]
+      processors: [resource, filter, batch]
+      exporters: [loki]
+
+  telemetry:
+    logs:
+      level: info
