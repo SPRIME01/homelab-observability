@@ -167,7 +167,7 @@ async def main():
             # Trigger home automation
             await monitor.trigger_home_automation(
                 "http://homeassistant:8123",
-                "YOUR_LONG_LIVED_ACCESS_TOKEN"
+                "ACTUAL_LONG_LIVED_ACCESS_TOKEN"
             )
 
             # Wait before next iteration
