@@ -28,7 +28,7 @@ logger = logging.getLogger(__name__)
 
 # Default configuration
 DEFAULT_INFLUXDB_URL = "http://homeassistant.local:8086"
-DEFAULT_ADMIN_TOKEN = ""  # This should be provided as an argument or environment variable
+DEFAULT_ADMIN_TOKEN = os.getenv('INFLUXDB_ADMIN_TOKEN', '')  # This should be provided as an argument or environment variable
 DEFAULT_ORG = "homeassistant"
 
 # Retention configurations in hours
