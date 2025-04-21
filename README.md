@@ -47,6 +47,14 @@ To deploy individual components:
 ./scripts/deploy-loki.sh
 ```
 
+## Environment Variables
+
+Ensure the following environment variables are set before running `setup-influxdb.py`:
+
+- `INFLUXDB_URL`: URL of the InfluxDB instance
+- `INFLUXDB_TOKEN`: Admin token for InfluxDB
+- `INFLUXDB_ORG`: Organization name in InfluxDB
+
 ## Testing
 
 Automated tests are available in the `tests/` directory.
