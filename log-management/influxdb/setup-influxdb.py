@@ -278,6 +278,13 @@ def main():
                         help='Username for the dedicated observability user')
     args = parser.parse_args()
 
+    # Check for required environment variables
+    required_env_vars = ['INFLUXDB_URL', 'INFLUXDB_TOKEN', 'INFLUXDB_ORG']
+    missing_env_vars = [var for var in required_env_vars if not os.getenv(var)]
+    if missing_env_vars:
+        logger.error(f"Missing required environment variables: {', '.join(missing_env_vars)}")
+        sys.exit(1)
+
     if not args.token:
         logger.error("No admin token provided. Set it with --token or INFLUXDB_TOKEN environment variable.")
         sys.exit(1)
