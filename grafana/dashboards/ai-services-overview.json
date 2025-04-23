@@ -1,0 +1,278 @@
+{
+  "__inputs": [],
+  "__requires": [
+    {
+      "type": "grafana",
+      "id": "grafana",
+      "name": "Grafana",
+      "version": "10.0.0"
+    },
+    {
+      "type": "datasource",
+      "id": "prometheus",
+      "name": "Prometheus",
+      "version": "1.0.0"
+    }
+  ],
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "id": null,
+  "links": [],
+  "liveNow": false,
+  "panels": [
+    {
+      "title": "GPU Utilization (%)",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+      "id": 1,
+      "options": {
+        "tooltip": { "mode": "multi", "sort": "none" },
+        "legend": {
+          "displayMode": "table",
+          "placement": "right",
+          "calcs": ["lastNotNull", "mean", "max"]
+        },
+        "unit": "percent" // Set unit to percent
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "avg by (gpu) (dcgm_gpu_utilization{job=\"dcgm-exporter\"})", // Replace with your actual metric query (e.g., from DCGM exporter)
+          "legendFormat": "GPU {{gpu}} Util",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "title": "GPU Memory Usage (MiB)",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "id": 2,
+      "options": {
+        "tooltip": { "mode": "multi", "sort": "none" },
+        "legend": {
+          "displayMode": "table",
+          "placement": "right",
+          "calcs": ["lastNotNull", "mean", "max"]
+        },
+        "unit": "decbytes" // Use appropriate unit (e.g., MiB)
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "dcgm_memory_used{job=\"dcgm-exporter\"}", // Replace with your actual metric query (e.g., from DCGM exporter)
+          "legendFormat": "GPU {{gpu}} Memory Used",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "title": "Inference Request Count (Total)",
+      "type": "stat",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 8 },
+      "id": 3,
+      "options": {
+        "reduceOptions": {
+          "values": false,
+          "calcs": ["sum"],
+          "fields": ""
+        },
+        "orientation": "auto",
+        "textMode": "auto",
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "sum(rate(nv_inference_request_success_total{job=\"triton\"}[$__rate_interval]))", // Replace with Triton/Ray success count rate
+          "format": "time_series",
+          "intervalFactor": 1,
+          "legendFormat": "Success Rate",
+          "refId": "A"
+        }
+      ]
+    },
+     {
+      "title": "Inference Latency (p95)",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 12 },
+      "id": 4,
+      "options": {
+        "tooltip": { "mode": "multi", "sort": "none" },
+        "legend": {
+          "displayMode": "table",
+          "placement": "right",
+          "calcs": ["lastNotNull"]
+        },
+         "unit": "ms" // Set unit to milliseconds
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          // Replace with your actual latency histogram quantile query (Triton example)
+          "expr": "histogram_quantile(0.95, sum(rate(nv_inference_request_duration_us_bucket{job=\"triton\"}[$__rate_interval])) by (le, model, version)) / 1000",
+          "legendFormat": "{{model}} ({{version}}) p95 Latency",
+          "refId": "A"
+        }
+      ],
+       "alerting": { // Example Alerting Threshold for high latency
+        "conditions": [
+          {
+            "evaluator": {
+              "params": [500, 1000], // Thresholds: Warning at 500ms, Critical at 1000ms
+              "type": "gt"
+            },
+            "operator": {
+              "type": "and"
+            },
+            "query": {
+              "params": ["A", "5m", "now"] // Check query A over the last 5 minutes
+            },
+            "reducer": {
+              "params": [],
+              "type": "last"
+            },
+            "type": "query"
+          }
+        ],
+        "frequency": "1m",
+        "for": "2m", // Alert if condition holds for 2 minutes
+        "noDataState": "NoData",
+        "executionErrorState": "Alerting"
+      }
+    },
+    {
+      "title": "Inference Throughput (req/sec)",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 12 },
+      "id": 5,
+      "options": {
+        "tooltip": { "mode": "multi", "sort": "none" },
+        "legend": {
+          "displayMode": "table",
+          "placement": "right",
+          "calcs": ["lastNotNull", "mean"]
+        },
+        "unit": "reqps" // Requests per second
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          // Replace with your actual request count rate query (Triton example)
+          "expr": "sum(rate(nv_inference_request_success_total{job=\"triton\"}[$__rate_interval])) by (model, version)",
+          "legendFormat": "{{model}} ({{version}}) Throughput",
+          "refId": "A"
+        }
+      ]
+    }
+  ],
+  "refresh": "30s", // Refresh more frequently for performance metrics
+  "schemaVersion": 36,
+  "style": "dark",
+  "tags": ["homelab", "ai", "triton", "ray", "inference", "gpu"],
+  "templating": { // Add template variables for filtering by model, version, gpu etc.
+    "list": [
+       {
+        "datasource": {
+          "type": "prometheus",
+          "uid": "prometheus"
+        },
+        "definition": "label_values(nv_inference_request_success_total, model)", // Example: Get model names from Triton metrics
+        "hide": 0,
+        "includeAll": true,
+        "multi": true,
+        "name": "model",
+        "options": [],
+        "query": "label_values(nv_inference_request_success_total, model)",
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 0,
+        "type": "query"
+      },
+      {
+        "datasource": {
+          "type": "prometheus",
+          "uid": "prometheus"
+        },
+        "definition": "label_values(dcgm_gpu_utilization, gpu)", // Example: Get GPU IDs from DCGM metrics
+        "hide": 0,
+        "includeAll": true,
+        "multi": true,
+        "name": "gpu",
+        "options": [],
+        "query": "label_values(dcgm_gpu_utilization, gpu)",
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 0,
+        "type": "query"
+      }
+      // Add more variables as needed (e.g., version)
+    ]
+  },
+  "time": {
+    "from": "now-1h",
+    "to": "now"
+  },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "AI Services Overview (Triton/Ray)",
+  "uid": "ai-services-overview", // Unique ID for the dashboard
+  "version": 1,
+  "weekStart": ""
+}

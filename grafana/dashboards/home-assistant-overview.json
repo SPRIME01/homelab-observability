@@ -1,0 +1,296 @@
+{
+  "__inputs": [],
+  "__requires": [
+    {
+      "type": "grafana",
+      "id": "grafana",
+      "name": "Grafana",
+      "version": "10.0.0"
+    },
+    {
+      "type": "datasource",
+      "id": "prometheus",
+      "name": "Prometheus",
+      "version": "1.0.0"
+    }
+  ],
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "id": null,
+  "links": [],
+  "liveNow": false,
+  "panels": [
+    {
+      "title": "Temperature Sensors (°C)",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+      "id": 1,
+      "options": {
+        "tooltip": { "mode": "multi", "sort": "none" },
+        "legend": {
+          "displayMode": "table",
+          "placement": "right",
+          "calcs": ["lastNotNull", "mean", "max", "min"]
+        },
+        "unit": "celsius"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          // Query for sensors with device_class='temperature'
+          "expr": "hass_sensor_state{job=\"home-assistant\", domain=\"sensor\", device_class=\"temperature\", entity_id=~\"$sensor_entity\", area_name=~\"$area\"}",
+          "legendFormat": "{{friendly_name}} ({{area_name}})",
+          "refId": "A"
+        }
+      ],
+       "alerting": { // Example Alerting Threshold for high temperature
+        "conditions": [
+          {
+            "evaluator": {
+              "params": [30, 35], // Thresholds: Warning at 30°C, Critical at 35°C
+              "type": "gt"
+            },
+            "operator": {
+              "type": "and"
+            },
+            "query": {
+              "params": ["A", "5m", "now"]
+            },
+            "reducer": {
+              "params": [],
+              "type": "last"
+            },
+            "type": "query"
+          }
+        ],
+        "frequency": "1m",
+        "for": "5m",
+        "noDataState": "NoData",
+        "executionErrorState": "Alerting"
+      }
+    },
+    {
+      "title": "Humidity Sensors (%)",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "id": 2,
+      "options": {
+        "tooltip": { "mode": "multi", "sort": "none" },
+        "legend": {
+          "displayMode": "table",
+          "placement": "right",
+          "calcs": ["lastNotNull", "mean", "max", "min"]
+        },
+        "unit": "percent" // 0-100
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+           // Query for sensors with device_class='humidity'
+          "expr": "hass_sensor_state{job=\"home-assistant\", domain=\"sensor\", device_class=\"humidity\", entity_id=~\"$sensor_entity\", area_name=~\"$area\"}",
+          "legendFormat": "{{friendly_name}} ({{area_name}})",
+          "refId": "A"
+        }
+      ]
+    },
+     {
+      "title": "Power Consumption (W)",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+      "id": 3,
+      "options": {
+        "tooltip": { "mode": "multi", "sort": "none" },
+        "legend": {
+          "displayMode": "table",
+          "placement": "right",
+          "calcs": ["lastNotNull", "mean", "max"]
+        },
+        "unit": "watt"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+           // Query for sensors with device_class='power'
+          "expr": "hass_sensor_state{job=\"home-assistant\", domain=\"sensor\", device_class=\"power\", entity_id=~\"$sensor_entity\", area_name=~\"$area\"}",
+          "legendFormat": "{{friendly_name}} ({{area_name}})",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "title": "Automation Trigger Rate",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+      "id": 4,
+      "options": {
+        "tooltip": { "mode": "multi", "sort": "desc" },
+        "legend": {
+          "displayMode": "table",
+          "placement": "right",
+          "calcs": ["sum"]
+        },
+        "unit": "ops" // Triggers per second
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "sum by (friendly_name) (rate(hass_automation_triggered_total{job=\"home-assistant\", entity_id=~\"$automation_entity\"}[$__rate_interval]))",
+          "legendFormat": "{{friendly_name}}",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "title": "Binary Sensor States",
+      "type": "statetimeline", // Good for showing on/off states over time
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 16 },
+      "id": 5,
+      "options": {
+         "mergeValues": true,
+         "showValue": "never",
+         "alignValue": "center",
+         "rowHeight": 0.9
+      },
+       "mappings": [ // Map 1 to 'On' and 0 to 'Off'
+        {
+          "type": "value",
+          "options": {
+            "1": { "text": "On", "color": "green" },
+            "0": { "text": "Off", "color": "red" }
+          }
+        }
+      ],
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          // Query for binary sensors (e.g., motion, door, window)
+          "expr": "hass_binary_sensor_state{job=\"home-assistant\", entity_id=~\"$binary_sensor_entity\", area_name=~\"$area\"}",
+          "legendFormat": "{{friendly_name}} ({{area_name}})",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "title": "Home Assistant Uptime",
+      "type": "stat",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 24 },
+      "id": 6,
+      "options": {
+        "reduceOptions": { "values": false, "calcs": ["lastNotNull"], "fields": "" },
+        "orientation": "auto", "textMode": "auto", "colorMode": "value", "graphMode": "none", "justifyMode": "auto",
+        "unit": "s" // Seconds
+      },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          // Query for uptime metric (adjust if name differs)
+          "expr": "time() - hass_info{job=\"home-assistant\"}",
+          "legendFormat": "Uptime",
+          "refId": "A"
+        }
+      ]
+    }
+  ],
+  "refresh": "1m",
+  "schemaVersion": 36,
+  "style": "dark",
+  "tags": ["homelab", "home-assistant", "smarthome", "iot"],
+  "templating": {
+    "list": [
+      {
+        "datasource": { "type": "prometheus", "uid": "prometheus" },
+        "definition": "label_values(hass_sensor_state{job=\"home-assistant\", domain=\"sensor\"}, entity_id)",
+        "hide": 0, "includeAll": true, "multi": true, "name": "sensor_entity", "options": [],
+        "query": "label_values(hass_sensor_state{job=\"home-assistant\", domain=\"sensor\"}, entity_id)",
+        "refresh": 1, "regex": "", "skipUrlSync": false, "sort": 1, "type": "query"
+      },
+      {
+        "datasource": { "type": "prometheus", "uid": "prometheus" },
+        "definition": "label_values(hass_binary_sensor_state{job=\"home-assistant\"}, entity_id)",
+        "hide": 0, "includeAll": true, "multi": true, "name": "binary_sensor_entity", "options": [],
+        "query": "label_values(hass_binary_sensor_state{job=\"home-assistant\"}, entity_id)",
+        "refresh": 1, "regex": "", "skipUrlSync": false, "sort": 1, "type": "query"
+      },
+       {
+        "datasource": { "type": "prometheus", "uid": "prometheus" },
+        "definition": "label_values(hass_automation_triggered_total{job=\"home-assistant\"}, entity_id)",
+        "hide": 0, "includeAll": true, "multi": true, "name": "automation_entity", "options": [],
+        "query": "label_values(hass_automation_triggered_total{job=\"home-assistant\"}, entity_id)",
+        "refresh": 1, "regex": "", "skipUrlSync": false, "sort": 1, "type": "query"
+      },
+      {
+        "datasource": { "type": "prometheus", "uid": "prometheus" },
+        "definition": "label_values(hass_sensor_state, area_name)", // Assumes area_name label exists
+        "hide": 0, "includeAll": true, "multi": true, "name": "area", "options": [],
+        "query": "label_values(hass_sensor_state, area_name)",
+        "refresh": 1, "regex": "", "skipUrlSync": false, "sort": 1, "type": "query"
+      }
+    ]
+  },
+  "time": {
+    "from": "now-6h",
+    "to": "now"
+  },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "Home Assistant Overview",
+  "uid": "home-assistant-overview", // Unique ID for the dashboard
+  "version": 1,
+  "weekStart": ""
+}

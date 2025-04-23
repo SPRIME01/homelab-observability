@@ -1,0 +1,197 @@
+groups:
+- name: system-alerts
+  rules:
+  - alert: HighCpuUsage
+    expr: (100 - (avg by (instance) (rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100)) > 85
+    for: 10m
+    labels:
+      severity: warning
+      team: system
+    annotations:
+      summary: "High CPU usage on {{ $labels.instance }}"
+      description: "{{ $labels.instance }} has high CPU usage ({{ $value | printf "%.2f" }}%) for more than 10 minutes."
+
+  - alert: HighMemoryUsage
+    expr: (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes) * 100 < 15
+    for: 10m
+    labels:
+      severity: warning
+      team: system
+    annotations:
+      summary: "High memory usage on {{ $labels.instance }}"
+      description: "{{ $labels.instance }} has less than 15% memory available ({{ $value | printf "%.2f" }}%) for more than 10 minutes."
+
+  - alert: LowDiskSpaceRoot
+    expr: (node_filesystem_avail_bytes{mountpoint="/"} / node_filesystem_size_bytes{mountpoint="/"}) * 100 < 10
+    for: 5m
+    labels:
+      severity: critical
+      team: system
+    annotations:
+      summary: "Low disk space on root filesystem of {{ $labels.instance }}"
+      description: "{{ $labels.instance }} root filesystem has less than 10% space remaining ({{ $value | printf "%.2f" }}%)."
+
+  - alert: LowDiskSpaceData
+    # Adjust mountpoint as needed for your data volumes
+    expr: (node_filesystem_avail_bytes{mountpoint!="/",fstype!~"tmpfs|fuse.lxcfs"} / node_filesystem_size_bytes{mountpoint!="/",fstype!~"tmpfs|fuse.lxcfs"}) * 100 < 15
+    for: 5m
+    labels:
+      severity: warning
+      team: system
+    annotations:
+      summary: "Low disk space on {{ $labels.mountpoint }} on {{ $labels.instance }}"
+      description: "{{ $labels.instance }} filesystem {{ $labels.mountpoint }} has less than 15% space remaining ({{ $value | printf "%.2f" }}%)."
+
+  - alert: NodeDown
+    expr: up == 0
+    for: 5m
+    labels:
+      severity: critical
+      team: system
+    annotations:
+      summary: "Node {{ $labels.instance }} is down"
+      description: "Prometheus target {{ $labels.instance }} (job {{ $labels.job }}) has been down for more than 5 minutes."
+
+- name: kubernetes-alerts
+  rules:
+  - alert: KubePodCrashLooping
+    expr: rate(kube_pod_container_status_restarts_total{job="kube-state-metrics"}[5m]) * 60 * 5 > 3
+    for: 15m
+    labels:
+      severity: warning
+      team: kubernetes
+    annotations:
+      summary: "Pod {{ $labels.namespace }}/{{ $labels.pod }} is crash looping"
+      description: "Pod {{ $labels.namespace }}/{{ $labels.pod }} (container {{ $labels.container }}) has restarted more than 3 times in the last 5 minutes."
+
+  - alert: KubePodNotReady
+    expr: sum by (namespace, pod) (kube_pod_status_phase{phase=~"Pending|Unknown"}) > 0
+    for: 15m
+    labels:
+      severity: warning
+      team: kubernetes
+    annotations:
+      summary: "Pod {{ $labels.namespace }}/{{ $labels.pod }} is not ready"
+      description: "Pod {{ $labels.namespace }}/{{ $labels.pod }} has been in Pending/Unknown phase for more than 15 minutes."
+
+  - alert: KubeJobFailed
+    # Assumes kube-state-metrics v1.6+
+    expr: kube_job_status_failed > 0
+    for: 1m
+    labels:
+      severity: warning
+      team: kubernetes
+    annotations:
+      summary: "Kubernetes Job {{ $labels.namespace }}/{{ $labels.job_name }} failed"
+      description: "Job {{ $labels.namespace }}/{{ $labels.job_name }} has failed."
+
+  - alert: KubeNodeNotReady
+    expr: kube_node_status_condition{condition="Ready",status="true"} == 0
+    for: 10m
+    labels:
+      severity: critical
+      team: kubernetes
+    annotations:
+      summary: "Kubernetes node {{ $labels.node }} is not ready"
+      description: "Node {{ $labels.node }} has been reporting NotReady status for more than 10 minutes."
+
+- name: application-alerts
+  rules:
+  # --- RabbitMQ Examples ---
+  - alert: RabbitMQTooManyUnackedMessages
+    expr: sum(rabbitmq_queue_messages_unacked) by (queue) > 1000
+    for: 10m
+    labels:
+      severity: warning
+      team: messaging
+    annotations:
+      summary: "RabbitMQ queue {{ $labels.queue }} has too many unacknowledged messages"
+      description: "Queue {{ $labels.queue }} has {{ $value }} unacknowledged messages for more than 10 minutes."
+
+  - alert: RabbitMQTooManyReadyMessages
+    expr: sum(rabbitmq_queue_messages_ready) by (queue) > 5000
+    for: 15m
+    labels:
+      severity: warning
+      team: messaging
+    annotations:
+      summary: "RabbitMQ queue {{ $labels.queue }} has too many ready messages (potential consumer issue)"
+      description: "Queue {{ $labels.queue }} has {{ $value }} ready messages for more than 15 minutes, check consumers."
+
+  # --- n8n Example ---
+  - alert: N8NWorkflowHighFailureRate
+    # Adjust metric names and labels based on your n8n exporter
+    expr: (sum(rate(n8n_workflow_executions_total{status="failed"}[5m])) / sum(rate(n8n_workflow_executions_total[5m]))) * 100 > 20
+    for: 10m
+    labels:
+      severity: warning
+      team: automation
+    annotations:
+      summary: "n8n workflow failure rate is high"
+      description: "More than 20% of n8n workflow executions failed in the last 5 minutes ({{ $value | printf "%.2f" }}%)."
+
+  # --- AI Service Example (Triton Latency) ---
+  - alert: TritonHighInferenceLatency
+    # Adjust metric names and labels based on your Triton metrics
+    expr: histogram_quantile(0.95, sum(rate(nv_inference_request_duration_us_bucket[5m])) by (le, model, version)) / 1000 > 1000 # 1000ms = 1s
+    for: 5m
+    labels:
+      severity: warning
+      team: ai
+    annotations:
+      summary: "High inference latency for Triton model {{ $labels.model }} ({{ $labels.version }})"
+      description: "P95 inference latency for {{ $labels.model }} ({{ $labels.version }}) is above 1000ms ({{ $value | printf "%.2f" }}ms)."
+
+  # --- Home Assistant Example (Sensor Unavailable) ---
+  - alert: HomeAssistantSensorUnavailable
+    # This requires a metric indicating availability, which the default integration might not provide directly.
+    # You might need a custom metric or rely on 'absent()' if a sensor stops reporting.
+    # Example using absent():
+    expr: absent(hass_sensor_state{entity_id="sensor.your_critical_sensor"}) == 1
+    for: 10m
+    labels:
+      severity: warning
+      team: smarthome
+    annotations:
+      summary: "Home Assistant sensor sensor.your_critical_sensor is unavailable"
+      description: "Critical sensor sensor.your_critical_sensor has not reported data for 10 minutes."
+
+- name: network-alerts
+  rules:
+  - alert: NodeNetworkReceiveErrors
+    expr: rate(node_network_receive_errs_total[2m]) > 0
+    for: 5m
+    labels:
+      severity: warning
+      team: network
+    annotations:
+      summary: "High network receive errors on {{ $labels.instance }} device {{ $labels.device }}"
+      description: "{{ $labels.instance }} device {{ $labels.device }} is experiencing network receive errors."
+
+  - alert: NodeNetworkTransmitErrors
+    expr: rate(node_network_transmit_errs_total[2m]) > 0
+    for: 5m
+    labels:
+      severity: warning
+      team: network
+    annotations:
+      summary: "High network transmit errors on {{ $labels.instance }} device {{ $labels.device }}"
+      description: "{{ $labels.instance }} device {{ $labels.device }} is experiencing network transmit errors."
+
+  # Add rules for latency/reachability if using blackbox_exporter or similar
+
+- name: security-alerts
+  rules:
+  # --- Example Falco Alert ---
+  # Requires Falco sidekick with Prometheus output or falco-exporter
+  - alert: FalcoCriticalAlert
+    expr: falco_events{priority="Critical"} > 0
+    for: 1m
+    labels:
+      severity: critical
+      team: security
+    annotations:
+      summary: "Critical Falco security event detected on {{ $labels.hostname }}"
+      description: "Rule: {{ $labels.rule }}. Output: {{ $labels.output }}."
+
+  # Add other security-related alerts based on your tools

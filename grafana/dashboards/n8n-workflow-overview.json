@@ -1,0 +1,322 @@
+{
+  "__inputs": [],
+  "__requires": [
+    {
+      "type": "grafana",
+      "id": "grafana",
+      "name": "Grafana",
+      "version": "10.0.0"
+    },
+    {
+      "type": "datasource",
+      "id": "prometheus",
+      "name": "Prometheus",
+      "version": "1.0.0"
+    }
+  ],
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "id": null,
+  "links": [],
+  "liveNow": false,
+  "panels": [
+    {
+      "title": "Total Executions (Rate)",
+      "type": "stat",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 0 },
+      "id": 1,
+      "options": {
+        "reduceOptions": {
+          "values": false,
+          "calcs": ["sum"],
+          "fields": ""
+        },
+        "orientation": "auto",
+        "textMode": "auto",
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "unit": "ops" // Operations per second (executions/sec)
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          // Replace with your actual execution count rate query
+          "expr": "sum(rate(n8n_workflow_executions_total{job=\"n8n-exporter\", workflow_name=~\"$workflow\"}[$__rate_interval]))",
+          "format": "time_series",
+          "intervalFactor": 1,
+          "legendFormat": "Total Rate",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "title": "Execution Success Rate (%)",
+      "type": "stat",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "gridPos": { "h": 4, "w": 6, "x": 6, "y": 0 },
+      "id": 2,
+      "options": {
+        "reduceOptions": {
+          "values": false,
+          "calcs": ["lastNotNull"],
+          "fields": ""
+        },
+        "orientation": "auto",
+        "textMode": "auto",
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "unit": "percent" // 0-100
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          // Replace with your success rate calculation
+          "expr": "(sum(rate(n8n_workflow_executions_total{job=\"n8n-exporter\", status=\"success\", workflow_name=~\"$workflow\"}[5m])) / sum(rate(n8n_workflow_executions_total{job=\"n8n-exporter\", workflow_name=~\"$workflow\"}[5m]))) * 100",
+          "format": "time_series",
+          "intervalFactor": 1,
+          "legendFormat": "Success Rate",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "title": "Execution Failure Rate (%)",
+      "type": "stat",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "gridPos": { "h": 4, "w": 6, "x": 12, "y": 0 },
+      "id": 3,
+       "options": {
+        "reduceOptions": {
+          "values": false,
+          "calcs": ["lastNotNull"],
+          "fields": ""
+        },
+        "orientation": "auto",
+        "textMode": "auto",
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "unit": "percent" // 0-100
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+           // Replace with your failure rate calculation
+          "expr": "(sum(rate(n8n_workflow_executions_total{job=\"n8n-exporter\", status=\"failed\", workflow_name=~\"$workflow\"}[5m])) / sum(rate(n8n_workflow_executions_total{job=\"n8n-exporter\", workflow_name=~\"$workflow\"}[5m]))) * 100",
+          "format": "time_series",
+          "intervalFactor": 1,
+          "legendFormat": "Failure Rate",
+          "refId": "A"
+        }
+      ],
+      "alerting": { // Example Alerting Threshold for high failure rate
+        "conditions": [
+          {
+            "evaluator": {
+              "params": [10, 20], // Thresholds: Warning at 10%, Critical at 20%
+              "type": "gt"
+            },
+            "operator": {
+              "type": "and"
+            },
+            "query": {
+              "params": ["A", "10m", "now"] // Check query A over the last 10 minutes
+            },
+            "reducer": {
+              "params": [],
+              "type": "last"
+            },
+            "type": "query"
+          }
+        ],
+        "frequency": "1m",
+        "for": "5m", // Alert if condition holds for 5 minutes
+        "noDataState": "NoData",
+        "executionErrorState": "Alerting"
+      }
+    },
+    {
+      "title": "Active/Waiting Executions",
+      "type": "stat",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "gridPos": { "h": 4, "w": 6, "x": 18, "y": 0 },
+      "id": 4,
+      "options": {
+        "reduceOptions": {
+          "values": false,
+          "calcs": ["lastNotNull"],
+          "fields": ""
+        },
+        "orientation": "auto",
+        "textMode": "auto",
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          // Replace with your active/waiting executions gauge query
+          "expr": "n8n_executions_active_gauge{job=\"n8n-exporter\", workflow_name=~\"$workflow\"}",
+          "format": "time_series",
+          "intervalFactor": 1,
+          "legendFormat": "Active/Waiting",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "title": "Execution Duration (p95)",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 4 },
+      "id": 5,
+      "options": {
+        "tooltip": { "mode": "multi", "sort": "none" },
+        "legend": {
+          "displayMode": "table",
+          "placement": "right",
+          "calcs": ["lastNotNull"]
+        },
+        "unit": "s" // Seconds
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          // Replace with your actual execution duration histogram quantile query
+          "expr": "histogram_quantile(0.95, sum(rate(n8n_workflow_execution_duration_seconds_bucket{job=\"n8n-exporter\", workflow_name=~\"$workflow\"}[$__rate_interval])) by (le, workflow_name))",
+          "legendFormat": "{{workflow_name}} p95 Duration",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "title": "Executions by Workflow (Success/Failure Rate)",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 4 },
+      "id": 6,
+      "options": {
+        "tooltip": { "mode": "multi", "sort": "desc" },
+        "legend": {
+          "displayMode": "table",
+          "placement": "right",
+          "calcs": ["sum"]
+        },
+         "unit": "ops" // Executions per second
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          // Replace with your success count rate query, grouped by workflow
+          "expr": "sum by (workflow_name) (rate(n8n_workflow_executions_total{job=\"n8n-exporter\", status=\"success\", workflow_name=~\"$workflow\"}[$__rate_interval]))",
+          "legendFormat": "{{workflow_name}} - Success",
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+           // Replace with your failure count rate query, grouped by workflow
+          "expr": "sum by (workflow_name) (rate(n8n_workflow_executions_total{job=\"n8n-exporter\", status=\"failed\", workflow_name=~\"$workflow\"}[$__rate_interval]))",
+          "legendFormat": "{{workflow_name}} - Failed",
+          "refId": "B"
+        }
+      ]
+    }
+  ],
+  "refresh": "1m",
+  "schemaVersion": 36,
+  "style": "dark",
+  "tags": ["homelab", "n8n", "automation", "workflow"],
+  "templating": {
+    "list": [
+       {
+        "datasource": {
+          "type": "prometheus",
+          "uid": "prometheus"
+        },
+        // Replace with query to get workflow names/ids from your metrics
+        "definition": "label_values(n8n_workflow_executions_total{job=\"n8n-exporter\"}, workflow_name)",
+        "hide": 0,
+        "includeAll": true,
+        "multi": true,
+        "name": "workflow",
+        "options": [],
+        "query": "label_values(n8n_workflow_executions_total{job=\"n8n-exporter\"}, workflow_name)",
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 0,
+        "type": "query"
+      }
+    ]
+  },
+  "time": {
+    "from": "now-6h",
+    "to": "now"
+  },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "n8n Workflow Overview",
+  "uid": "n8n-workflow-overview", // Unique ID for the dashboard
+  "version": 1,
+  "weekStart": ""
+}
