@@ -62,3 +62,7 @@ Automated tests are available in the `tests/` directory.
 ## Contributing
 
 See CONTRIBUTING.md for details on how to contribute to this project.
+
+## Future Improvements
+
+For a comprehensive to-do list identifying all necessary tasks to ensure the project is robust, maintainable, well-documented, and functionally correct, please refer to the `docs/future-improvements.md` file.
